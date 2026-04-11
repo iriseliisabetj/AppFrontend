@@ -61,11 +61,11 @@ export function ForumPreviewCard() {
       <CardHeader
         title="Viimased postitused foorumis"
         right={
-          <PrimaryLinkButton to="/forum">Vaata kõiki postitusi</PrimaryLinkButton>
+          <PrimaryLinkButton to="/forum">Vaata kõiki</PrimaryLinkButton>
         }
         subtitle={
           <>
-            Kasutajad saavad jagada kogemusi, kas oma nimega või anonüümselt.
+            Hoiata teisi jagades enda kogemust, oma nimega või anonüümselt.
           </>
         }
       />

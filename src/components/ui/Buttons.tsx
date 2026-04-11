@@ -10,7 +10,7 @@ type LinkButtonProps = {
 export function PrimaryLinkButton({ to, children, className }: LinkButtonProps) {
   return (
     <Link className={`btn btn--primary ${className ?? ""}`} to={to}>
-      {children} <span aria-hidden>→</span>
+      {children} <span aria-hidden></span>
     </Link>
   );
 }

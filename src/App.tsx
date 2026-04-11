@@ -8,6 +8,7 @@ import QuizTodayPage from "./pages/QuizPage";
 import AdminViewQuizPage from "./pages/admin/AdminViewQuizPage";
 import AdminCreateQuizPage from "./pages/admin/AdminCreateQuizPage";
 import ProfilePage from "./pages/ProfilePage";
+import AboutPage from "./pages/AboutPage";
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
       <Route path="/admin/quizzes" element={<AdminViewQuizPage />} />
       <Route path="/admin/quizzes/new" element={<AdminCreateQuizPage />} />
       <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/about" element={<AboutPage />} />
     </Routes>
   );
 }

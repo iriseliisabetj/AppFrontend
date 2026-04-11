@@ -3,8 +3,10 @@ export type AdminChannel = 1 | 2;
 export type AdminQuizItemDraft = {
   channel: AdminChannel;
   sender: string;
+  emailAddress: string;
   subject: string;
-  bodyPreview: string;
+  smsPreview: string;
+  htmlBody: string;
   isPhishing: boolean;
   explanationTitle: string;
   explanationText: string;

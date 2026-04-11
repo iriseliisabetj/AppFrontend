@@ -8,10 +8,10 @@ import type { ApiError } from "../../auth/authUtils";
 export default function RegisterPage() {
   const navigate = useNavigate();
 
-  const [userName, setUserName] = useState("Username");
-  const [email, setEmail] = useState("test@example.com");
-  const [password, setPassword] = useState("Test123!");
-  const [confirmPassword, setConfirmPassword] = useState("Test123!");
+  const [userName, setUserName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
@@ -90,7 +90,6 @@ export default function RegisterPage() {
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
                 autoComplete="username"
-                placeholder="Nt MariTamm"
               />
             </label>
 
@@ -101,7 +100,6 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
-                placeholder="nimi@domeen.ee"
               />
             </label>
 
@@ -152,8 +150,6 @@ export default function RegisterPage() {
             {debugOut != null && <DebugInfoAlert data={debugOut} />}
           </form>
         </div>
-
-        <div className="help">Tipp: kasuta tugevat parooli ja ära kasuta sama parooli, mida kasutad päris kontodel.</div>
       </div>
     </div>
   );

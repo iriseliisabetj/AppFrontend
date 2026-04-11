@@ -4,15 +4,22 @@ import { api } from "../../api/client";
 import { ApiErrorAlert, DebugInfoAlert } from "../../components/ui/ApiAlerts";
 import { parseAxiosError, storeTokens, tryExtractTokens } from "../../auth/authUtils";
 import type { ApiError } from "../../auth/authUtils";
+import { fetchMyBadges } from "../../api/profile";
+import { getUnseenBadges, markBadgeSeen } from "../../auth/badgeUnlocks";
+import { BadgeUnlocked } from "../../components/ui/BadgeUnlocked";
+import type { ProfileBadgeDto } from "../../types/profile";
 
 export default function LoginPage() {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("test@example.com");
-  const [password, setPassword] = useState("Test123!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [debugOut, setDebugOut] = useState<unknown>(null);
+
+  const [badgeQueue, setBadgeQueue] = useState<ProfileBadgeDto[]>([]);
+  const [navigateAfterBadges, setNavigateAfterBadges] = useState(false);
 
   const isValid = useMemo(() => email.trim().length > 3 && password.length >= 6, [email, password]);
 
@@ -38,11 +45,38 @@ export default function LoginPage() {
         return;
       }
 
+      try {
+        const badges = await fetchMyBadges();
+        const unseen = getUnseenBadges(badges);
+
+        if (unseen.length > 0) {
+          setBadgeQueue(unseen);
+          setNavigateAfterBadges(true);
+          return;
+        }
+      } catch {
+      }
+
       navigate("/");
+
     } catch (e: unknown) {
       setError(parseAxiosError(e));
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  function closeBadgeModal() {
+    const current = badgeQueue[0];
+    if (current) {
+      markBadgeSeen(current);
+    }
+
+    const remaining = badgeQueue.slice(1);
+    setBadgeQueue(remaining);
+
+    if (remaining.length === 0 && navigateAfterBadges) {
+      navigate("/");
     }
   }
 
@@ -79,7 +113,7 @@ export default function LoginPage() {
               </button>
 
               <div className="row" style={{ justifyContent: "space-between" }}>
-                <Link className="link" to="\">
+                <Link className="link" to="/">
                   ← Avaleht
                 </Link>
                 <Link className="link" to="/auth/register">
@@ -93,6 +127,9 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      {badgeQueue.length > 0 && (
+        <BadgeUnlocked badge={badgeQueue[0]} onClose={closeBadgeModal} />
+      )}
     </div>
   );
 }

@@ -1,12 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { fetchMyProfile } from "../api/profile";
-import type { MyProfileDto } from "../types/profile";
+import { fetchMyBadges, fetchMyProfile } from "../api/profile";
+import type { MyProfileDto, ProfileBadgeDto } from "../types/profile";
+import { BadgeDetailsModal } from "../components/ui/BadgeDetailsModal";
+import { PageLayout } from "../components/layout/PageLayout";
 
 function fmtDateEt(ymd: string) {
   const [y, m, d] = ymd.split("-").map(Number);
   const dt = new Date(y, (m ?? 1) - 1, d ?? 1);
-  return dt.toLocaleDateString("et-EE", { day: "2-digit", month: "long", year: "numeric" });
+  return dt.toLocaleDateString("et-EE", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 function streakLabel(days: number) {
@@ -18,7 +24,11 @@ function streakLabel(days: number) {
 }
 
 function getErrMsg(e: unknown) {
-  const ex = e as { message?: string; response?: { data?: { title?: string; message?: string } } };
+  const ex = e as {
+    message?: string;
+    response?: { data?: { title?: string; message?: string } };
+  };
+
   return (
     ex?.response?.data?.title ??
     ex?.response?.data?.message ??
@@ -28,17 +38,25 @@ function getErrMsg(e: unknown) {
 }
 
 export default function ProfilePage() {
-  const [p, setP] = useState<MyProfileDto | null>(null);
+  const [profile, setProfile] = useState<MyProfileDto | null>(null);
+  const [badges, setBadges] = useState<ProfileBadgeDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [selectedBadge, setSelectedBadge] = useState<ProfileBadgeDto | null>(null);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
       setErr(null);
+
       try {
-        const data = await fetchMyProfile();
-        setP(data);
+        const [profileData, badgeData] = await Promise.all([
+          fetchMyProfile(),
+          fetchMyBadges(),
+        ]);
+
+        setProfile(profileData);
+        setBadges(badgeData);
       } catch (e: unknown) {
         setErr(getErrMsg(e));
       } finally {
@@ -48,142 +66,243 @@ export default function ProfilePage() {
   }, []);
 
   const lastActiveText = useMemo(() => {
-    if (!p) return "—";
-    if (!p.lastActiveDate) return "Pole veel aktiivne olnud";
-    return fmtDateEt(p.lastActiveDate);
-  }, [p]);
+    if (!profile) return "—";
+    if (!profile.lastActiveDate) return "Pole veel aktiivne olnud";
+    return fmtDateEt(profile.lastActiveDate);
+  }, [profile]);
 
   const streakHint = useMemo(() => {
-    if (!p) return "";
-    return streakLabel(p.currentStreakDays);
-  }, [p]);
+    if (!profile) return "";
+    return streakLabel(profile.currentStreakDays);
+  }, [profile]);
+
+  const latestBadge = useMemo(() => {
+    return (
+      [...badges]
+        .filter((b) => b.isUnlocked && b.awardedAt)
+        .sort(
+          (a, b) =>
+            new Date(b.awardedAt ?? 0).getTime() -
+            new Date(a.awardedAt ?? 0).getTime()
+        )[0] ?? null
+    );
+  }, [badges]);
+
+  const sortedBadges = useMemo(() => {
+    return [...badges].sort((a, b) => {
+      if (a.isUnlocked !== b.isUnlocked) {
+        return a.isUnlocked ? -1 : 1;
+      }
+
+      const aTime = a.awardedAt ? new Date(a.awardedAt).getTime() : 0;
+      const bTime = b.awardedAt ? new Date(b.awardedAt).getTime() : 0;
+
+      return bTime - aTime;
+    });
+  }, [badges]);
+
+  const unlockedCount = useMemo(() => {
+    return badges.filter((b) => b.isUnlocked).length;
+  }, [badges]);
 
   return (
-    <div className="page">
-      <div className="container">
-        <header className="topbar" style={{ marginBottom: 18 }}>
-          <div>
-            <h1 style={{ margin: 0 }}>Minu profiil</h1>
-            <div className="help" style={{ marginTop: 6 }}>
-              Siin on sinu punktid, streak ja kontoandmed.
-            </div>
+    <PageLayout>
+      <section style={{ marginBottom: 18 }}>
+        <div>
+          <h1 style={{ margin: 0 }}>Minu profiil</h1>
+          <div className="help" style={{ marginTop: 6 }}>
+            Siin on sinu punktid, streak, kontoandmed ja märgid.
           </div>
+        </div>
+      </section>
 
-          <nav className="nav">
-            <Link className="btn btn--ghost" to="/">
-              ← Avaleht
-            </Link>
-            <Link className="btn btn--primary" to="/quiz/today">
-              Tänane viktoriin →
-            </Link>
-          </nav>
-        </header>
+      {loading && <div className="help">Laen profiili…</div>}
+      {err && <div className="alert alert--error">{err}</div>}
 
-        {loading && <div className="help">Laen profiili…</div>}
-        {err && <div className="alert alert--error">{err}</div>}
+      {!loading && !err && profile && (
+        <>
+          <section className="card" style={{ marginBottom: 18 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <div
+                  className="row"
+                  style={{ alignItems: "center", gap: 10, marginBottom: 10 }}
+                >
+                  <div className="badge" style={{ display: "inline-flex" }}>
+                    @{profile.username}
+                  </div>
+                </div>
 
-        {!loading && !err && p && (
-          <>
-            <div className="card" style={{ marginBottom: 18 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                <h2 className="card__title" style={{ marginTop: 0 }}>
+                  {profile.username}
+                </h2>
+
+                <div className="help" style={{ marginTop: 8 }}>
+                  <div>
+                    <b>E-post:</b> {profile.email}
+                  </div>
+                  <div style={{ marginTop: 4 }}>
+                    <b>Viimane aktiivsus:</b> {lastActiveText}
+                  </div>
+                </div>
+              </div>
+
+              {latestBadge && (
+                <button
+                  className="profileFeaturedBadge"
+                  onClick={() => setSelectedBadge(latestBadge)}
+                >
+                  {latestBadge.iconPath && (
+                    <img
+                      src={latestBadge.iconPath}
+                      alt={latestBadge.name}
+                      className="profileFeaturedBadge__icon"
+                    />
+                  )}
+
+                  <div className="profileFeaturedBadge__content">
+                    <div className="profileFeaturedBadge__label">
+                      Viimati teenitud märk
+                    </div>
+                    <div className="profileFeaturedBadge__name">
+                      {latestBadge.name}
+                    </div>
+                    <div className="profileFeaturedBadge__hint">
+                      Vajuta, et näha kirjeldusega detailvaadet
+                    </div>
+                  </div>
+                </button>
+              )}
+            </div>
+          </section>
+
+          <section
+            className="grid profileStatsGrid"
+            style={{ gap: 12, marginBottom: 18 }}
+          >
+            <div className="stat">
+              <div className="stat__title">Punktid kokku</div>
+              <div className="stat__value">{profile.totalPoints}</div>
+              <div className="stat__hint">
+                Punktid tulevad kinnitatud vastustest.
+              </div>
+            </div>
+
+            <div className="stat">
+              <div className="stat__title">Praegune streak</div>
+              <div className="stat__value">{profile.currentStreakDays}</div>
+              <div className="stat__hint">{streakHint}</div>
+            </div>
+
+            <div className="stat">
+              <div className="stat__title">Parim streak</div>
+              <div className="stat__value">{profile.bestStreakDays}</div>
+              <div className="stat__hint">
+                Sinu parim järjestikune päevade seeria.
+              </div>
+            </div>
+          </section>
+
+          <section className="card" style={{ marginBottom: 18 }}>
+            <div>
+              <h2 className="card__title">Märgid</h2>
+              <div className="help" style={{ marginTop: 8 }}>
+                Teenitud: <b>{unlockedCount}</b> / {badges.length}
+              </div>
+            </div>
+
+            <div className="profileBadgesGrid" style={{ marginTop: 16 }}>
+              {sortedBadges.map((badge) => (
+                <button
+                  key={badge.badgeId}
+                  className={`profileBadgeCard ${
+                    badge.isUnlocked
+                      ? "profileBadgeCard--unlocked"
+                      : "profileBadgeCard--locked"
+                  }`}
+                  onClick={() => setSelectedBadge(badge)}
+                >
+                  {badge.iconPath && (
+                    <img
+                      src={badge.iconPath}
+                      alt={badge.name}
+                      className="profileBadgeCard__icon"
+                    />
+                  )}
+
+                  <div className="profileBadgeCard__name">{badge.name}</div>
+
+                  <div className="profileBadgeCard__status">
+                    {badge.isUnlocked ? "Teenitud" : "Lukus"}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="card">
+            <h2 className="card__title">Eesmärk ja rütm</h2>
+
+            <div className="grid" style={{ marginTop: 12, gap: 12 }}>
+              <div className="step">
+                <div className="step__n">1</div>
                 <div>
-                  <div className="badge" style={{ display: "inline-flex", marginBottom: 10 }}>
-                    @{p.username}
-                  </div>
-                  <h2 className="card__title" style={{ marginTop: 0 }}>
-                    {p.username}
-                  </h2>
-                  <div className="help" style={{ marginTop: 8 }}>
-                    <div>
-                      <b>E-post:</b> {p.email}
-                    </div>
-                    <div style={{ marginTop: 4 }}>
-                      <b>Viimane aktiivsus:</b> {lastActiveText}
-                    </div>
+                  <div className="step__title">Tee tänane viktoriin</div>
+                  <div className="step__text">
+                    3 eelvaadet päevas on optimaalne: kiire, aga piisav, et
+                    mustrid kinnistuks.
                   </div>
                 </div>
+              </div>
 
-                <div className="card card--soft" style={{ minWidth: 260 }}>
-                  <div className="help" style={{ marginTop: 0 }}>
-                    Kiirsoovitus
+              <div className="step">
+                <div className="step__n">2</div>
+                <div>
+                  <div className="step__title">Loe selgitus läbi</div>
+                  <div className="step__text">
+                    Isegi kui vastad õigesti, selgitus annab “miks” — see on see,
+                    mis hiljem päriselus aitab.
                   </div>
-                  <div style={{ marginTop: 8, fontWeight: 900, letterSpacing: "-0.2px" }}>
-                    Tee 3 eelvaadet päevas
-                  </div>
-                  <div className="help" style={{ marginTop: 6 }}>
-                    Järjepidevus kasvatab mustrituvastust. Iga päev = streak + kindlam otsus.
+                </div>
+              </div>
+
+              <div className="step">
+                <div className="step__n">3</div>
+                <div>
+                  <div className="step__title">Hoia streak elus</div>
+                  <div className="step__text">
+                    Kui jätad päeva vahele, kukub järjepidevus. Väike pingutus
+                    iga päev on parem kui harv “suur õppimine”.
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="grid profileStatsGrid" style={{ gap: 12 }}>
-              <div className="stat">
-                <div className="stat__title">Punktid kokku</div>
-                <div className="stat__value">{p.totalPoints}</div>
-                <div className="stat__hint">Punktid tulevad kinnitatud vastustest.</div>
-              </div>
-
-              <div className="stat">
-                <div className="stat__title">Praegune streak</div>
-                <div className="stat__value">{p.currentStreakDays}</div>
-                <div className="stat__hint">{streakHint}</div>
-              </div>
-
-              <div className="stat">
-                <div className="stat__title">Parim streak</div>
-                <div className="stat__value">{p.bestStreakDays}</div>
-                <div className="stat__hint">Sinu parim järjestikune päevade seeria.</div>
-              </div>
+            <div className="row" style={{ marginTop: 16 }}>
+              <Link className="btn btn--primary" to="/quiz/today">
+                Alusta tänast viktoriini →
+              </Link>
+              <Link className="btn btn--ghost" to="/">
+                Tagasi avalehele
+              </Link>
             </div>
+          </section>
+        </>
+      )}
 
-            <div className="card" style={{ marginTop: 18 }}>
-              <h2 className="card__title">Eesmärk ja rütm</h2>
-
-              <div className="grid" style={{ marginTop: 12, gap: 12 }}>
-                <div className="step">
-                  <div className="step__n">1</div>
-                  <div>
-                    <div className="step__title">Tee tänane viktoriin</div>
-                    <div className="step__text">
-                      3 eelvaadet päevas on optimaalne: kiire, aga piisav, et mustrid kinnistuks.
-                    </div>
-                  </div>
-                </div>
-
-                <div className="step">
-                  <div className="step__n">2</div>
-                  <div>
-                    <div className="step__title">Loe selgitus läbi</div>
-                    <div className="step__text">
-                      Isegi kui vastad õigesti, selgitus annab “miks” — see on see, mis hiljem päriselus aitab.
-                    </div>
-                  </div>
-                </div>
-
-                <div className="step">
-                  <div className="step__n">3</div>
-                  <div>
-                    <div className="step__title">Hoia streak elus</div>
-                    <div className="step__text">
-                      Kui jätad päeva vahele, kukub järjepidevus. Väike pingutus iga päev on parem kui harv “suur õppimine”.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="row" style={{ marginTop: 16 }}>
-                <Link className="btn btn--primary" to="/quiz/today">
-                  Alusta tänast viktoriini →
-                </Link>
-                <Link className="btn btn--ghost" to="/">
-                  Tagasi avalehele
-                </Link>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+      {selectedBadge && (
+        <BadgeDetailsModal
+          badge={selectedBadge}
+          onClose={() => setSelectedBadge(null)}
+        />
+      )}
+    </PageLayout>
   );
 }

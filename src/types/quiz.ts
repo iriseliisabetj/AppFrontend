@@ -7,8 +7,10 @@ export type ApiQuizItem = {
   id: string;
   channel: number;
   sender: string;
+  emailAddress?: string | null;
   subject: string;
-  bodyPreview: string;
+  smsPreview?: string | null;
+  htmlBody?: string | null;
 };
 
 export type UiChannel = "EMAIL" | "SMS";
@@ -17,8 +19,10 @@ export type UiPreview = {
   id: string;
   channel: UiChannel;
   sender: string;
+  emailAddress?: string | null;
   subject?: string;
-  bodyPreview: string;
+  smsPreview?: string | null;
+  htmlBody?: string | null;
   date: string;
 };
 
@@ -32,8 +36,10 @@ export function mapTodayQuizToPreviews(dto: ApiTodayQuiz): UiPreview[] {
     id: x.id,
     channel: mapChannel(x.channel),
     sender: x.sender,
+    emailAddress: x.emailAddress ?? null,
     subject: x.subject,
-    bodyPreview: x.bodyPreview,
+    smsPreview: x.smsPreview ?? null,
+    htmlBody: x.htmlBody ?? null,
     date: dto.date,
   }));
 }

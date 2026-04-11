@@ -5,6 +5,7 @@ import { createAdminQuiz, fetchAdminQuizItems, updateAdminQuiz } from "../../api
 import { PreviewTemplate } from "../../components/previews/PreviewTemplates";
 import type { UiPreview } from "../../types/quiz";
 import { defaultTemplateFor } from "../../components/previews/templates";
+import { HtmlEditor } from "../../components/ui/HtmlEditor";
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -15,22 +16,30 @@ function emptyItem(): AdminQuizItemDraft {
     channel: 1,
     sender: "",
     subject: "",
-    bodyPreview: "",
+    emailAddress: "",
+    smsPreview: "",
+    htmlBody: "",
     isPhishing: false,
     explanationTitle: "",
     explanationText: "",
   };
 }
 
-function toUiPreview(date: string, it: AdminQuizItemDraft, idx: number): UiPreview {
+function toUiPreview(
+  date: string,
+  it: AdminQuizItemDraft,
+  idx: number
+): UiPreview {
   return {
     id: `draft-${idx}`,
     date,
     channel: it.channel === 2 ? "SMS" : "EMAIL",
     sender: it.sender || "Saatja",
+    emailAddress: it.channel === 1 ? it.emailAddress || "" : null,
     subject: it.subject || "(ilma pealkirjata)",
-    bodyPreview: it.bodyPreview || "",
-  } as any;
+    smsPreview: it.smsPreview || "",
+    htmlBody: it.channel === 1 ? it.htmlBody || "" : null,
+  };
 }
 
 export default function AdminCreateQuizPage() {
@@ -38,7 +47,11 @@ export default function AdminCreateQuizPage() {
   const navigate = useNavigate();
 
   const [date, setDate] = useState(q.get("date") ?? "");
-  const [items, setItems] = useState<AdminQuizItemDraft[]>([emptyItem(), emptyItem(), emptyItem()]);
+  const [items, setItems] = useState<AdminQuizItemDraft[]>([
+    emptyItem(),
+    emptyItem(),
+    emptyItem(),
+  ]);
   const [stepIndex, setStepIndex] = useState(0);
 
   const [loading, setLoading] = useState(false);
@@ -46,7 +59,6 @@ export default function AdminCreateQuizPage() {
 
   const [exists, setExists] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
-
   const [savedOk, setSavedOk] = useState(false);
 
   const [info, setInfo] = useState<string | null>(null);
@@ -54,7 +66,10 @@ export default function AdminCreateQuizPage() {
 
   const isSummary = stepIndex >= 3;
 
-  const current = useMemo(() => (isSummary ? null : items[stepIndex]), [items, stepIndex, isSummary]);
+  const current = useMemo(
+    () => (isSummary ? null : items[stepIndex]),
+    [items, stepIndex, isSummary]
+  );
 
   const uiPreview = useMemo(() => {
     if (!current) return null;
@@ -72,17 +87,22 @@ export default function AdminCreateQuizPage() {
 
       try {
         const data = await fetchAdminQuizItems(date);
-        const list = Array.isArray(data) ? data : (data?.items ?? data?.entries ?? data?.results ?? []);
+        const list = Array.isArray(data)
+          ? data
+          : data?.items ?? data?.entries ?? data?.results ?? [];
 
         if (Array.isArray(list) && list.length > 0) {
           const mapped: AdminQuizItemDraft[] = [0, 1, 2].map((i) => {
             const x = list[i];
             if (!x) return emptyItem();
+
             return {
               channel: (x.channel ?? 1) as AdminChannel,
               sender: x.sender ?? "",
               subject: x.subject ?? "",
-              bodyPreview: x.bodyPreview ?? "",
+              emailAddress: x.emailAddress ?? "",
+              smsPreview: x.smsPreview ?? "",
+              htmlBody: x.htmlBody ?? "",
               isPhishing: Boolean(x.isPhishing),
               explanationTitle: x.explanationTitle ?? "",
               explanationText: x.explanationText ?? "",
@@ -91,24 +111,33 @@ export default function AdminCreateQuizPage() {
 
           setItems(mapped);
           setExists(true);
-          setInfo("Laadisin olemasoleva viktoriini. Muuda vajadusel ja salvesta kokkuvõttes.");
+          setInfo(
+            "Laadisin olemasoleva viktoriini. Muuda vajadusel ja salvesta kokkuvõttes."
+          );
         } else {
           setItems([emptyItem(), emptyItem(), emptyItem()]);
           setExists(false);
-          setInfo("Sellele kuupäevale pole veel viktoriini. Täida 3 sammu ja salvesta kokkuvõttes.");
+          setInfo(
+            "Sellele kuupäevale pole veel viktoriini. Täida 3 sammu ja salvesta kokkuvõttes."
+          );
         }
 
         setIsDirty(false);
         setStepIndex(0);
-      } catch (e: any) {
+      } catch (e: unknown) {
+        const ex = e as {
+          response?: { data?: { title?: string; message?: string } };
+          message?: string;
+        };
+
         setItems([emptyItem(), emptyItem(), emptyItem()]);
         setExists(false);
         setIsDirty(false);
         setStepIndex(0);
         setError(
-          e?.response?.data?.title ??
-            e?.response?.data?.message ??
-            e?.message ??
+          ex?.response?.data?.title ??
+            ex?.response?.data?.message ??
+            ex?.message ??
             "Viktoriini laadimine ebaõnnestus"
         );
       } finally {
@@ -117,8 +146,13 @@ export default function AdminCreateQuizPage() {
     })();
   }, [date]);
 
-  function setField<K extends keyof AdminQuizItemDraft>(key: K, value: AdminQuizItemDraft[K]) {
-    setItems((prev) => prev.map((x, i) => (i === stepIndex ? { ...x, [key]: value } : x)));
+  function setField<K extends keyof AdminQuizItemDraft>(
+    key: K,
+    value: AdminQuizItemDraft[K]
+  ) {
+    setItems((prev) =>
+      prev.map((x, i) => (i === stepIndex ? { ...x, [key]: value } : x))
+    );
     setIsDirty(true);
     setSavedOk(false);
     setInfo(null);
@@ -137,7 +171,9 @@ export default function AdminCreateQuizPage() {
     if (!date) return false;
     if (!it.sender.trim()) return false;
     if (it.channel === 1 && !it.subject.trim()) return false;
-    if (!it.bodyPreview.trim()) return false;
+    if (it.channel === 1 && !it.emailAddress.trim()) return false;
+    if (it.channel === 2 && !it.smsPreview.trim()) return false;
+    if (it.channel === 1 && !it.htmlBody.trim()) return false;
     if (!it.explanationText.trim()) return false;
     return true;
   }
@@ -167,12 +203,17 @@ export default function AdminCreateQuizPage() {
 
       setIsDirty(false);
       setSavedOk(true);
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const ex = e as {
+        response?: { data?: { title?: string; message?: string } };
+        message?: string;
+      };
+
       setSavedOk(false);
       setError(
-        e?.response?.data?.title ??
-          e?.response?.data?.message ??
-          e?.message ??
+        ex?.response?.data?.title ??
+          ex?.response?.data?.message ??
+          ex?.message ??
           "Salvestamine ebaõnnestus"
       );
     } finally {
@@ -209,18 +250,23 @@ export default function AdminCreateQuizPage() {
           <div>
             <h1 style={{ margin: 0 }}>Viktoriini koostamine</h1>
             <div className="help" style={{ marginTop: 6 }}>
-              {isSummary ? "Kokkuvõte" : `Samm ${stepIndex + 1} / 3`} • kuupäev: <b>{date || "—"}</b>
+              {isSummary ? "Kokkuvõte" : `Samm ${stepIndex + 1} / 3`} • kuupäev:{" "}
+              <b>{date || "—"}</b>
             </div>
           </div>
 
           <nav className="nav">
-            <Link className="btn btn--ghost" to="/admin/quizzes">← Kalendrisse</Link>
+            <Link className="btn btn--ghost" to="/admin/quizzes">
+              ← Kalendrisse
+            </Link>
           </nav>
         </header>
 
         <div className="card" style={{ marginBottom: 18 }}>
           <div className="adminDateRow">
-            <div className="help" style={{ marginTop: 0 }}>Vali kuupäev</div>
+            <div className="help" style={{ marginTop: 0 }}>
+              Vali kuupäev
+            </div>
             <input
               className="input"
               type="date"
@@ -236,8 +282,16 @@ export default function AdminCreateQuizPage() {
           </div>
 
           {loading && <div className="help">Laen viktoriini…</div>}
-          {info && <div className="alert alert--info" style={{ marginTop: 12 }}>{info}</div>}
-          {error && <div className="alert alert--error" style={{ marginTop: 12 }}>{error}</div>}
+          {info && (
+            <div className="alert alert--info" style={{ marginTop: 12 }}>
+              {info}
+            </div>
+          )}
+          {error && (
+            <div className="alert alert--error" style={{ marginTop: 12 }}>
+              {error}
+            </div>
+          )}
         </div>
 
         {isSummary ? (
@@ -246,21 +300,38 @@ export default function AdminCreateQuizPage() {
 
             <div className="grid" style={{ marginTop: 14, gap: 12 }}>
               {items.map((it, idx) => (
-                <div key={idx} className="lbRow" style={{ gridTemplateColumns: "80px 1fr 220px" }}>
+                <div
+                  key={idx}
+                  className="lbRow"
+                  style={{ gridTemplateColumns: "80px 1fr 220px" }}
+                >
                   <div className="badge">Samm {idx + 1}</div>
                   <div className="lbRow__name">
-                    {(it.channel === 2 ? "SMS" : "E-kiri")} • {it.sender || "—"}
+                    {it.channel === 2 ? "SMS" : "E-kiri"} • {it.sender || "—"}
                   </div>
                   <div className="lbRow__right">
-                    <div className="lbRow__points">{it.isPhishing ? "Õngitsus" : "Mitte õngitsus"}</div>
-                    <div className="lbRow__streak">{it.explanationTitle || "—"}</div>
+                    <div className="lbRow__points">
+                      {it.isPhishing ? "Õngitsus" : "Mitte õngitsus"}
+                    </div>
+                    <div className="lbRow__streak">
+                      {it.explanationTitle || "—"}
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="row" style={{ marginTop: 16, justifyContent: "space-between" }}>
-              <button className="btn btn--ghost" onClick={onBack} disabled={saving || loading}>← Tagasi</button>
+            <div
+              className="row"
+              style={{ marginTop: 16, justifyContent: "space-between" }}
+            >
+              <button
+                className="btn btn--ghost"
+                onClick={onBack}
+                disabled={saving || loading}
+              >
+                ← Tagasi
+              </button>
 
               <div className="row" style={{ gap: 10 }}>
                 <button
@@ -268,7 +339,11 @@ export default function AdminCreateQuizPage() {
                   onClick={onSave}
                   disabled={!date || saving || loading}
                 >
-                  {saving ? "Salvestan..." : exists ? "Salvesta muudatused" : "Loo viktoriin"}
+                  {saving
+                    ? "Salvestan..."
+                    : exists
+                    ? "Salvesta muudatused"
+                    : "Loo viktoriin"}
                 </button>
 
                 <button
@@ -283,7 +358,8 @@ export default function AdminCreateQuizPage() {
 
             {!savedOk && (
               <div className="help">
-                Enne “Edasi →” pead vajutama “{exists ? "Salvesta muudatused" : "Loo viktoriin"}”.
+                Enne “Edasi →” pead vajutama “
+                {exists ? "Salvesta muudatused" : "Loo viktoriin"}”.
               </div>
             )}
 
@@ -295,7 +371,14 @@ export default function AdminCreateQuizPage() {
           </div>
         ) : (
           <div className="card">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                gap: 10,
+              }}
+            >
               <h2 className="card__title">Samm {stepIndex + 1}</h2>
               <span className="badge">{stepIndex + 1} / 3</span>
             </div>
@@ -310,7 +393,12 @@ export default function AdminCreateQuizPage() {
                         <select
                           className="input"
                           value={current.channel}
-                          onChange={(e) => setField("channel", Number(e.target.value) as AdminChannel)}
+                          onChange={(e) =>
+                            setField(
+                              "channel",
+                              Number(e.target.value) as AdminChannel
+                            )
+                          }
                         >
                           <option value={1}>E-kiri</option>
                           <option value={2}>SMS</option>
@@ -328,6 +416,20 @@ export default function AdminCreateQuizPage() {
 
                       {current.channel === 1 && (
                         <label className="field">
+                          <span className="label">E-posti aadress</span>
+                          <input
+                            className="input"
+                            value={current.emailAddress}
+                            onChange={(e) =>
+                              setField("emailAddress", e.target.value)
+                            }
+                            placeholder="nt support@paypaI-security.com"
+                          />
+                        </label>
+                      )}
+
+                      {current.channel === 1 && (
+                        <label className="field">
                           <span className="label">Pealkiri</span>
                           <input
                             className="input"
@@ -337,27 +439,49 @@ export default function AdminCreateQuizPage() {
                         </label>
                       )}
 
-                      <label className="field">
-                        <span className="label">{current.channel === 2 ? "Sõnumi tekst" : "Eelvaate tekst"}</span>
-                        <textarea
-                          className="input"
-                          style={{ minHeight: 120 }}
-                          value={current.bodyPreview}
-                          onChange={(e) => setField("bodyPreview", e.target.value)}
-                        />
-                      </label>
+                      {current.channel === 2 && (
+                        <label className="field">
+                          <span className="label">Sõnumi eelvaate tekst</span>
+                          <textarea
+                            className="input"
+                            style={{ minHeight: 100 }}
+                            value={current.smsPreview}
+                            onChange={(e) => setField("smsPreview", e.target.value)}
+                            placeholder="Sisesta SMS-i tekst või lühike sõnumi sisu"
+                          />
+                        </label>
+                      )}
 
-                      <div className="row" style={{ gap: 10, alignItems: "center" }}>
-                        <span className="label" style={{ marginRight: 6 }}>Õige vastus</span>
+                      {current.channel === 1 && (
+                        <label className="field">
+                          <span className="label">E-kirja HTML sisu</span>
+                          <HtmlEditor
+                            value={current.htmlBody}
+                            onChange={(value) => setField("htmlBody", value)}
+                          />
+                        </label>
+                      )}
+
+                      <div
+                        className="row"
+                        style={{ gap: 10, alignItems: "center" }}
+                      >
+                        <span className="label" style={{ marginRight: 6 }}>
+                          Õige vastus
+                        </span>
                         <button
-                          className={`btn ${current.isPhishing ? "btn--primary" : ""}`}
+                          className={`btn ${
+                            current.isPhishing ? "btn--primary" : ""
+                          }`}
                           type="button"
                           onClick={() => setField("isPhishing", true)}
                         >
                           Õngitsus
                         </button>
                         <button
-                          className={`btn ${!current.isPhishing ? "btn--primary" : ""}`}
+                          className={`btn ${
+                            !current.isPhishing ? "btn--primary" : ""
+                          }`}
                           type="button"
                           onClick={() => setField("isPhishing", false)}
                         >
@@ -370,7 +494,9 @@ export default function AdminCreateQuizPage() {
                         <input
                           className="input"
                           value={current.explanationTitle}
-                          onChange={(e) => setField("explanationTitle", e.target.value)}
+                          onChange={(e) =>
+                            setField("explanationTitle", e.target.value)
+                          }
                         />
                       </label>
 
@@ -380,7 +506,9 @@ export default function AdminCreateQuizPage() {
                           className="input"
                           style={{ minHeight: 120 }}
                           value={current.explanationText}
-                          onChange={(e) => setField("explanationText", e.target.value)}
+                          onChange={(e) =>
+                            setField("explanationText", e.target.value)
+                          }
                         />
                       </label>
                     </div>
@@ -398,7 +526,9 @@ export default function AdminCreateQuizPage() {
                   </div>
 
                   <div className="adminWizardRight">
-                    <div className="help" style={{ marginTop: 0 }}>Reaalajas eelvaade</div>
+                    <div className="help" style={{ marginTop: 0 }}>
+                      Reaalajas eelvaade
+                    </div>
                     <div className="quizTemplate" style={{ marginTop: 10 }}>
                       {uiPreview && (
                         <PreviewTemplate
@@ -409,7 +539,10 @@ export default function AdminCreateQuizPage() {
                     </div>
 
                     <div className="alert alert--info" style={{ marginTop: 12 }}>
-                      Õige vastus: <b>{current.isPhishing ? "Õngitsus" : "Mitte õngitsus"}</b>
+                      Õige vastus:{" "}
+                      <b>
+                        {current.isPhishing ? "Õngitsus" : "Mitte õngitsus"}
+                      </b>
                       <div className="help" style={{ marginTop: 6, opacity: 0.9 }}>
                         Kasutaja näeb selgitust pärast kinnitamist.
                       </div>
@@ -417,7 +550,10 @@ export default function AdminCreateQuizPage() {
                   </div>
                 </div>
 
-                <div className="row" style={{ marginTop: 16, justifyContent: "space-between" }}>
+                <div
+                  className="row"
+                  style={{ marginTop: 16, justifyContent: "space-between" }}
+                >
                   <button
                     className="btn btn--ghost"
                     onClick={onBack}

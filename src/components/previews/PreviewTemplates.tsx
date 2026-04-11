@@ -18,7 +18,10 @@ export function PreviewTemplate({
 function GmailEmailPreview({ data, onClick }: { data: UiPreview; onClick?: () => void }) {
   const senderInitial = (data.sender?.[0] ?? "?").toUpperCase();
   const senderName = data.sender ?? "Saatja";
-  const senderEmail = `${(data.sender ?? "sender").toLowerCase().replace(/\s+/g, ".")}@gmail.com`;
+  const rawEmail = data.emailAddress?.trim() ?? "";
+  const senderEmail = rawEmail.includes("@")
+    ? rawEmail
+    : `${(data.sender ?? "sender").toLowerCase().replace(/\s+/g, ".")}@example.com`;
 
   return (
     <div className="pv pv--gmailOpen" role={onClick ? "button" : undefined} onClick={onClick}>
@@ -46,7 +49,14 @@ function GmailEmailPreview({ data, onClick }: { data: UiPreview; onClick?: () =>
         <div className="gBodyOuter">
           <div className="gBodyCard">
             <div className="gSubject">{data.subject ?? "(ilma pealkirjata)"}</div>
-            <div className="gBodyText">{data.bodyPreview}</div>
+            {data.htmlBody && data.htmlBody.trim().length > 0 ? (
+              <div
+                className="gBodyText"
+                dangerouslySetInnerHTML={{ __html: data.htmlBody }}
+              />
+            ) : (
+              <div className="gBodyText"></div>
+            )}
           </div>
         </div>
       </div>
@@ -88,7 +98,7 @@ function IMessagePreview({ data, onClick }: { data: UiPreview; onClick?: () => v
         <br/><br/><br/><br/><br/>
 
         <div className="iBubble iBubble--in">
-          <div className="iText">{data.bodyPreview}</div>
+          <div className="iText">{data.smsPreview ?? ""}</div>
           <div className="iBubbleMeta">{data.date ?? "—"}</div>
         </div>
       </div>
