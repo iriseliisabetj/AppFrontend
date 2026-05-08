@@ -266,30 +266,43 @@ export default function QuizPage() {
               <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
                 {previews.map((preview, idx) => {
                   const answer = answers[preview.id];
+                  const alertClass =
+                    answer?.isCorrect === true
+                      ? "alert alert--info"
+                      : answer?.isCorrect === false
+                      ? "alert alert--error"
+                      : "alert alert--info";
 
                   return (
-                    <div
-                      key={preview.id}
-                      className="lbRow"
-                      style={{ gridTemplateColumns: "80px 1fr 200px" }}
-                    >
-                      <div className="badge">Samm {idx + 1}</div>
+                    <div key={preview.id} className={alertClass} style={{ marginTop: 0 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          gap: 12,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <span className="badge">Küsimus {idx + 1}</span>
+                            <span style={{ fontWeight: 900 }}>
+                              {preview.channel === "SMS" ? "SMS" : "E-kiri"} • {preview.sender}
+                            </span>
+                          </div>
 
-                      <div className="lbRow__name">
-                        {preview.channel === "SMS" ? "SMS" : "E-kiri"} •{" "}
-                        {preview.sender}
-                      </div>
-
-                      <div className="lbRow__right">
-                        <div className="lbRow__points">
-                          {answer?.isCorrect
-                            ? "Õige"
-                            : answer?.isCorrect === false
-                            ? "Vale"
-                            : "Kinnitamata"}
+                          <div className="help" style={{ marginTop: 8, opacity: 0.9 }}>
+                            Sinu valik: <b>{answer?.choice ? choiceLabel(answer.choice) : "—"}</b>
+                          </div>
                         </div>
-                        <div className="lbRow__streak">
-                          Sinu valik: {answer?.choice ? choiceLabel(answer.choice) : "—"}
+
+                        <div style={{ fontWeight: 900 }}>
+                          {answer?.isCorrect
+                            ? "Õige ✅"
+                            : answer?.isCorrect === false
+                            ? "Vale ❌"
+                            : "Kinnitamata"}
                         </div>
                       </div>
                     </div>
@@ -300,7 +313,7 @@ export default function QuizPage() {
               <div className="row" style={{ marginTop: 16 }}>
                 <PrimaryLinkButton to="/">Tagasi avalehele</PrimaryLinkButton>
                 <SecondaryLinkButton to="/profile">
-                  Vaata statistikat
+                  Vaata profiililt statistikat
                 </SecondaryLinkButton>
               </div>
             </section>
@@ -314,10 +327,6 @@ export default function QuizPage() {
                   gap: 10,
                 }}
               >
-                <h2 className="card__title">Eelvaade</h2>
-                <span className="badge">
-                  {stepIndex + 1} / 3
-                </span>
               </div>
 
               <div className="quizTemplate">

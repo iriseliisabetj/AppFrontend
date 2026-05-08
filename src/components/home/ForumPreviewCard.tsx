@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import { CardHeader } from "../ui/CardHeader";
-import { PrimaryLinkButton } from "../ui/Buttons";
 
 type ForumPostPreview = {
   id: string;
@@ -61,7 +60,9 @@ export function ForumPreviewCard() {
       <CardHeader
         title="Viimased postitused foorumis"
         right={
-          <PrimaryLinkButton to="/forum">Vaata kõiki</PrimaryLinkButton>
+          <Link className="btn btn--ghost" to="/forum">
+            Vaata kõiki
+          </Link>
         }
         subtitle={
           <>

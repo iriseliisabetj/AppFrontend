@@ -10,3 +10,21 @@ export function isAdminFromToken(): boolean {
     return false;
   }
 }
+
+export function getUsernameFromToken(): string | null {
+  const token = localStorage.getItem("access_token");
+  if (!token) return null;
+
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+
+    return (
+      payload["unique_name"] ||
+      payload["name"] ||
+      payload["sub"] ||
+      null
+    );
+  } catch {
+    return null;
+  }
+}

@@ -13,19 +13,19 @@ export default function AboutPage() {
           <h1 className="card__title">Lehe eesmärk</h1>
           <p className="help">
             Rakenduse eesmärk on aidata kasutajatel õppida ära tundma
-            andmepüügi (phishing) katseid nii e-kirjade kui ka SMS-ide kaudu.
+            andmepüügi katseid nii e-kirjade kui ka SMS-ide kaudu.
           </p>
 
           <p className="help">
             Selle asemel, et anda lihtsalt teooriat, keskendub rakendus
-            praktilisele õppimisele: kasutaja näeb reaalse elu näidetele
-            sarnaseid sõnumeid ning peab otsustama, kas tegemist on
+            praktilisele õppimisele: näed reaalse elu näidetele
+            sarnaseid sõnumeid ning pead otsustama, kas tegemist on
             õngitsusega või mitte.
           </p>
 
           <p className="help">
             Iga otsuse järel kuvatakse selgitus, mis aitab mõista,
-            millised tunnused viitasid ohule.
+            millised tunnused viitasid õngitsusele.
           </p>
         </div>
 
@@ -80,13 +80,12 @@ export default function AboutPage() {
 
         {/* MIDA ÕPID */}
         <div className="card">
-          <h2 className="card__title">Mida sa õpid</h2>
+          <h2 className="card__title">Õngitsuse tunnused, mida meeles pidada</h2>
 
           <ul className="help" style={{ marginTop: 10 }}>
-            <li>Kuidas ära tunda kahtlaseid linke ja domeene</li>
-            <li>Kuidas tuvastada võltsitud saatjaid</li>
-            <li>Millised sõnumid kasutavad survet või hirmutamist</li>
-            <li>Kuidas erinevad phishing e-kirjad ja SMS-id</li>
+            <li>Kahtlased lingid ja domeenid</li>
+            <li>Võltsitud saatjad</li>
+            <li>Ajaline surve ja hirmutamine</li>
           </ul>
         </div>
 
@@ -95,15 +94,17 @@ export default function AboutPage() {
           <h2 className="card__title">Mängulisus</h2>
 
           <p className="help">
-            Rakendus kasutab mängulisi elemente, et hoida õppimine
-            motiveeriv ja järjepidev:
+            Rakendus kasutab mängustamise elemente, et hoida õppimine
+            motiveerivana ja aidata järjepidevust säilitada:
           </p>
 
           <ul className="help" style={{ marginTop: 10 }}>
             <li>Punktid õigete vastuste eest</li>
-            <li>Streak ehk järjestikused õiged päevad</li>
-            <li>Edetabelid (leaderboard)</li>
-            <li>Saavutused (badges)</li>
+            <li>Streak ehk järjestikuste aktiivsete päevade arv</li>
+            <li>Edetabel</li>
+            <li>Märgid</li>
+            <li>Koondtulemus viktoriini lõpus</li>
+            <li>Edenemise nägemine enda profiilil</li>
           </ul>
         </div>
 

@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { logout } from "../../api/logout";
 import { isAdminFromToken } from "../../auth/helpers";
 import { useEffect, useRef, useState } from "react";
+import { fetchMyProfile } from "../../api/profile";
 
 export function Header() {
   const navigate = useNavigate();
@@ -9,11 +10,14 @@ export function Header() {
   const isAdmin = isAdminFromToken();
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
+
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   async function onLogout() {
     await logout();
     setMenuOpen(false);
+    setUsername(null);
     navigate("/");
     window.location.reload();
   }
@@ -45,6 +49,34 @@ export function Header() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadMe() {
+      if (!isLoggedIn) {
+        setUsername(null);
+        return;
+      }
+
+      try {
+        const me = await fetchMyProfile();
+        if (!cancelled) {
+          setUsername(me.username);
+        }
+      } catch {
+        if (!cancelled) {
+          setUsername(null);
+        }
+      }
+    }
+
+    loadMe();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn]);
+
   return (
     <div className="headerShell">
       <header className="topbar">
@@ -63,6 +95,12 @@ export function Header() {
         </Link>
 
         <div className="headerMenu" ref={menuRef}>
+          {isLoggedIn && username && (
+            <div className="headerGreeting">
+              Tere, <b>{username}</b>!
+            </div>
+          )}
+
           <button
             type="button"
             className="burgerBtn"
@@ -84,7 +122,7 @@ export function Header() {
               >
                 Avaleht
               </Link>
-              
+
               <Link
                 className="burgerMenu__item"
                 to="/forum"
@@ -92,6 +130,7 @@ export function Header() {
               >
                 Foorum
               </Link>
+
               {isLoggedIn ? (
                 <>
                   {isAdmin ? (
@@ -109,7 +148,7 @@ export function Header() {
                     to="/profile"
                     onClick={closeMenu}
                   >
-                    Minu tulemused
+                    Minu profiil
                   </Link>
 
                   <button
@@ -122,7 +161,6 @@ export function Header() {
                 </>
               ) : (
                 <>
-
                   <Link
                     className="burgerMenu__item"
                     to="/auth/login"

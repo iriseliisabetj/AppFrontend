@@ -1,6 +1,5 @@
 import { PrimaryLinkButton, SecondaryLinkButton } from "../components/ui/Buttons";
 import { Pill } from "../components/ui/Pill";
-import { Feature } from "../components/ui/Feature";
 import { LeaderboardCard } from "../components/home/LeaderboardCard";
 import { ForumPreviewCard } from "../components/home/ForumPreviewCard";
 import { PageLayout } from "../components/layout/PageLayout";
@@ -47,31 +46,6 @@ export default function HomePage() {
         <ForumPreviewCard />
       </section>
 
-      <section style={{ marginTop: 18 }}>
-        <div className="card card--soft">
-          <h2 className="card__title">Mida see treening arendab?</h2>
-
-          <div className="features">
-            <Feature
-              title="Mustrid ja heuristikad"
-              text="Õpid ära tundma tüüpilised õngitsuse võtted: surve, autoriteet, vale turvatunne, linkide varjamine."
-            />
-            <Feature
-              title="Kiire otsustus"
-              text="Harjutad sama olukorda, mis päriselus: otsus tehakse “eelseisundis”, enne kui sa klikid."
-            />
-            <Feature
-              title="Foorum: päris kogemused"
-              text="Jaga oma kokkupuuteid andmepüügiga ja loe teiste lugusid. Soovi korral saad postitada oma nimega või anonüümselt."
-            />
-          </div>
-
-          <div className="help" style={{ marginTop: 14 }}>
-            Tipp: kui miski tekitab “kiire tegutsemise” tunde (ähvardus, trahv, konto lukustus), siis see on sageli
-            signaal aeg maha võtta ja kontrollida.
-          </div>
-        </div>
-      </section>
     </PageLayout>
   );
 }

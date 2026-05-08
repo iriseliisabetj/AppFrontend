@@ -14,6 +14,8 @@ export default function ForumPage() {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<ForumPost | null>(null);
+  const [sortMode, setSortMode] = useState<"newest" | "oldest">("newest");
+  const [filterMode, setFilterMode] = useState<"all" | "mine">("all");
 
   const isLoggedIn = Boolean(localStorage.getItem("access_token"));
 
@@ -48,6 +50,22 @@ export default function ForumPage() {
     }
   }
 
+  const visiblePosts = posts
+    .filter((p) => {
+      if (filterMode === "mine") {
+        return p.canDelete;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      const aDate = a.createdAtUtc ?? "";
+      const bDate = b.createdAtUtc ?? "";
+
+      return sortMode === "newest"
+        ? bDate.localeCompare(aDate)
+        : aDate.localeCompare(bDate);
+    });
+
   return (
     <PageLayout>
       <section style={{ marginBottom: 18 }}>
@@ -55,7 +73,9 @@ export default function ForumPage() {
           <div>
             <h1 style={{ margin: 0 }}>Foorum</h1>
             <div className="help" style={{ marginTop: 6 }}>
-              Loe teiste kasutajate postitusi ning <b>logi sisse</b>, et jagada oma kogemusi õngitsustega.
+              {isLoggedIn
+                ? "Loe teiste kasutajate postitusi ning jaga oma kogemusi õngitsustega."
+                : "Loe teiste kasutajate postitusi ning <b>logi sisse</b>, et jagada oma kogemusi õngitsustega."}
             </div>
           </div>
 
@@ -72,7 +92,45 @@ export default function ForumPage() {
       </section>
 
       <section className="card">
-        <h2 className="card__title">Postitused</h2>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 12,
+          }}
+        >
+          <h2 className="card__title" style={{ margin: 0 }}>
+            Postitused
+          </h2>
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <select
+              className="input"
+              value={filterMode}
+              onChange={(e) =>
+                setFilterMode(e.target.value as "all" | "mine")
+              }
+            >
+              <option value="all">Kõik</option>
+              <option value="mine" disabled={!isLoggedIn}>
+                Minu postitused
+              </option>
+            </select>
+
+            <select
+              className="input"
+              value={sortMode}
+              onChange={(e) =>
+                setSortMode(e.target.value as "newest" | "oldest")
+              }
+            >
+              <option value="newest">Uuemad ees</option>
+              <option value="oldest">Vanemad ees</option>
+            </select>
+          </div>
+        </div>
 
         {loading && <div className="help">Laen postitusi…</div>}
         {error && <div className="alert alert--error">{error}</div>}
@@ -82,11 +140,11 @@ export default function ForumPage() {
         )}
 
         <div className="grid" style={{ marginTop: 14 }}>
-          {posts.map((post) => (
+          {visiblePosts.map((post) => (
             <ForumPostCard
               key={post.id}
               post={post}
-              isLoggedIn={isLoggedIn}
+              canDelete={post.canDelete}
               onOpen={setSelectedPost}
               onDelete={handleDelete}
             />
@@ -102,7 +160,7 @@ export default function ForumPage() {
 
       <PostDetailsModal
         post={selectedPost}
-        isLoggedIn={isLoggedIn}
+        canDelete={selectedPost?.canDelete ?? false}
         onClose={() => setSelectedPost(null)}
         onDelete={handleDelete}
       />

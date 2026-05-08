@@ -13,6 +13,7 @@ function useQuery() {
 
 function emptyItem(): AdminQuizItemDraft {
   return {
+    id: undefined,
     channel: 1,
     sender: "",
     subject: "",
@@ -97,6 +98,7 @@ export default function AdminCreateQuizPage() {
             if (!x) return emptyItem();
 
             return {
+              id: x.id ?? x.quizItemId,
               channel: (x.channel ?? 1) as AdminChannel,
               sender: x.sender ?? "",
               subject: x.subject ?? "",
@@ -192,8 +194,19 @@ export default function AdminCreateQuizPage() {
 
     try {
       if (exists) {
-        await updateAdminQuiz(date, items);
-        setInfo("Muudatused salvestatud ✅");
+        const updateItems = items.map((item) => {
+        if (!item.id) {
+          throw new Error("Olemasoleva viktoriini muutmiseks peab igal küsimusel olema id.");
+        }
+
+        return {
+          ...item,
+          id: item.id,
+        };
+      });
+
+      await updateAdminQuiz(date, updateItems);
+      setInfo("Muudatused salvestatud ✅");
       } else {
         const payload: AdminQuizDraft = { date, items };
         await createAdminQuiz(payload);
@@ -250,8 +263,7 @@ export default function AdminCreateQuizPage() {
           <div>
             <h1 style={{ margin: 0 }}>Viktoriini koostamine</h1>
             <div className="help" style={{ marginTop: 6 }}>
-              {isSummary ? "Kokkuvõte" : `Samm ${stepIndex + 1} / 3`} • kuupäev:{" "}
-              <b>{date || "—"}</b>
+              {isSummary ? "Kokkuvõte" : `Samm ${stepIndex + 1} / 3`} 
             </div>
           </div>
 
@@ -265,7 +277,7 @@ export default function AdminCreateQuizPage() {
         <div className="card" style={{ marginBottom: 18 }}>
           <div className="adminDateRow">
             <div className="help" style={{ marginTop: 0 }}>
-              Vali kuupäev
+              Valitud kuupäev
             </div>
             <input
               className="input"
@@ -301,7 +313,7 @@ export default function AdminCreateQuizPage() {
             <div className="grid" style={{ marginTop: 14, gap: 12 }}>
               {items.map((it, idx) => (
                 <div
-                  key={idx}
+                  key={it.id ?? `draft-${idx}`}
                   className="lbRow"
                   style={{ gridTemplateColumns: "80px 1fr 220px" }}
                 >
@@ -379,7 +391,7 @@ export default function AdminCreateQuizPage() {
                 gap: 10,
               }}
             >
-              <h2 className="card__title">Samm {stepIndex + 1}</h2>
+              <h2 className="card__title">Küsimus {stepIndex + 1}</h2>
               <span className="badge">{stepIndex + 1} / 3</span>
             </div>
 

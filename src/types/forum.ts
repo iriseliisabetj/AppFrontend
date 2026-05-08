@@ -6,6 +6,7 @@ export type ForumPost = {
   createdAtUtc?: string;
   authorDisplayName?: string;
   imagePath?: string | null;
+  canDelete: boolean;
 };
 
 export type CreateForumPostInput = {

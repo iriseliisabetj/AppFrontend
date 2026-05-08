@@ -19,7 +19,7 @@ export function BadgeDetailsModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.45)",
+        background: "rgba(0,0,0,0.6)",
         display: "grid",
         placeItems: "center",
         zIndex: 1000,

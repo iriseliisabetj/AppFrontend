@@ -97,9 +97,6 @@ export default function AdminViewQuizPage() {
         <header className="topbar" style={{ marginBottom: 18 }}>
           <div>
             <h1 style={{ margin: 0 }}>Halda viktoriine</h1>
-            <div className="help" style={{ marginTop: 6 }}>
-              Roheline/punane kehtib ainult käesoleva kuu päevadele. Hallid on eelmise/järgmise kuu päevad.
-            </div>
           </div>
           <nav className="nav">
             <Link className="btn btn--ghost" to="/">← Avaleht</Link>

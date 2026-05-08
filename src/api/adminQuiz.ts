@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { AdminQuizDraft, AdminQuizItemDraft } from "../types/adminQuiz";
+import type { AdminQuizDraft, AdminQuizUpdateItemDraft } from "../types/adminQuiz";
 
 export async function fetchAdminQuizItems(date: string) {
   const res = await api.get("/admin/quizzes/items", { params: { date } });
@@ -16,7 +16,7 @@ export async function deleteAdminQuiz(date: string) {
   return res.data;
 }
 
-export async function updateAdminQuiz(date: string, items: AdminQuizItemDraft[]) {
+export async function updateAdminQuiz(date: string, items: AdminQuizUpdateItemDraft[]) {
   const res = await api.put(`/admin/quizzes/${date}`, { items });
   return res.data;
 }

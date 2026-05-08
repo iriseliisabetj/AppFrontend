@@ -4,14 +4,14 @@ import { formatForumDate, getForumAuthorLabel } from "./forumHelpers";
 
 type PostDetailsModalProps = {
   post: ForumPost | null;
-  isLoggedIn: boolean;
+  canDelete: boolean;
   onClose: () => void;
   onDelete: (id: string) => Promise<void>;
 };
 
 export function PostDetailsModal({
   post,
-  isLoggedIn,
+  canDelete,
   onClose,
   onDelete,
 }: PostDetailsModalProps) {
@@ -33,10 +33,6 @@ export function PostDetailsModal({
               {formatForumDate(post.createdAtUtc)}
             </div>
           </div>
-
-          <button className="btn btn--ghost" type="button" onClick={onClose}>
-            Sule
-          </button>
         </div>
 
         <div className="forumPostModal__body">
@@ -58,7 +54,7 @@ export function PostDetailsModal({
             Sulge vaade
           </button>
 
-          {isLoggedIn && (
+          {canDelete && (
             <button
               className="btn btn--ghost"
               type="button"

@@ -11,7 +11,7 @@ export async function answerTodaysQuiz(payload: ApiQuizAnswerRequest) {
   return res.data;
 }
 
-export async function getLeaderboard(limit = 10) {
+export async function getLeaderboard(limit = 100) {
   const res = await api.get("/quiz/leaderboard", { params: { limit } });
   return res.data;
 }

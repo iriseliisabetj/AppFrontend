@@ -8,14 +8,14 @@ import {
 
 type ForumPostCardProps = {
   post: ForumPost;
-  isLoggedIn: boolean;
+  canDelete: boolean;
   onOpen: (post: ForumPost) => void;
   onDelete: (id: string) => Promise<void>;
 };
 
 export function ForumPostCard({
   post,
-  isLoggedIn,
+  canDelete,
   onOpen,
   onDelete,
 }: ForumPostCardProps) {
@@ -57,7 +57,7 @@ export function ForumPostCard({
           {formatForumDate(post.createdAtUtc)}
         </div>
 
-        {isLoggedIn && (
+        {canDelete && (
           <button
             className="btn btn--ghost"
             type="button"

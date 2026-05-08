@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { api } from "../../api/client";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { getLeaderboard } from "../../api/quiz";
 import { CardHeader } from "../ui/CardHeader";
 import { BadgeDetailsModal } from "../ui/BadgeDetailsModal";
 import type { ProfileBadgeDto } from "../../types/profile";
+import { fetchMyProfile } from "../../api/profile";
 
 type LeaderboardRow = {
   rank?: number;
@@ -54,22 +55,30 @@ export function LeaderboardCard({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [selectedBadge, setSelectedBadge] = useState<ProfileBadgeDto | null>(null);
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null);
 
-  const top = useMemo(() => rows.slice(0, 10), [rows]);
+  const currentUserRowRef = useRef<HTMLDivElement | null>(null);
+
+  const visibleRows = useMemo(() => rows, [rows]);
 
   async function load() {
     setLoading(true);
     setErr(null);
 
     try {
-      const res = await api.get("/quiz/leaderboard");
-      const data = res.data;
+      const [leaderboardData, profileRes] = await Promise.all([
+        getLeaderboard(100),
+        isLoggedIn ? fetchMyProfile() : Promise.resolve(null),
+      ]);
+
+      const data = leaderboardData;
 
       const list: LeaderboardRow[] = Array.isArray(data)
         ? data
-        : (data?.entries ?? data?.items ?? data?.results ?? []);
+        : data?.entries ?? data?.items ?? data?.results ?? [];
 
       setRows(list);
+      setCurrentUsername(profileRes?.username ?? null);
     } catch (e: unknown) {
       const ex = e as {
         response?: { data?: { title?: string; message?: string } };
@@ -92,6 +101,15 @@ export function LeaderboardCard({ isLoggedIn }: { isLoggedIn: boolean }) {
     load();
   }, []);
 
+  useEffect(() => {
+    if (currentUserRowRef.current) {
+      currentUserRowRef.current.scrollIntoView({
+        block: "center",
+        behavior: "smooth",
+      });
+    }
+  }, [visibleRows, currentUsername]);
+
   return (
     <>
       <div className="card card--soft">
@@ -111,58 +129,61 @@ export function LeaderboardCard({ isLoggedIn }: { isLoggedIn: boolean }) {
               Ei saanud edetabelit laadida
             </div>
             <div style={{ fontSize: 13, opacity: 0.9 }}>{err}</div>
-
-            {!isLoggedIn && (
-              <div className="help" style={{ marginTop: 8 }}>
-                Kui edetabel on ainult sisseloginud kasutajatele, logi sisse ja proovi uuesti.
-              </div>
-            )}
           </div>
         )}
 
         {!err && (
           <div style={{ marginTop: 14 }}>
-            {loading && top.length === 0 ? (
+            {loading && visibleRows.length === 0 ? (
               <div className="help">Laen edetabelit…</div>
-            ) : top.length === 0 ? (
+            ) : visibleRows.length === 0 ? (
               <div className="help">Edetabel on hetkel tühi.</div>
             ) : (
-              <div className="grid" style={{ gap: 8 }}>
-                {top.map((r, i) => {
-                  const badgeDetails = toBadgeDetails(r);
+              <div className="leaderboardScroll">
+                <div className="grid" style={{ gap: 8 }}>
+                  {visibleRows.map((r, i) => {
+                    const badgeDetails = toBadgeDetails(r);
+                    const isCurrentUser =
+                      Boolean(currentUsername) &&
+                      getName(r).trim().toLowerCase() === currentUsername?.trim().toLowerCase();
 
-                  return (
-                    <div key={`${getRank(i, r)}-${getName(r)}`} className="lbRow">
-                      <span className="badge">{getRank(i, r)}</span>
+                    return (
+                      <div
+                        key={`${getRank(i, r)}-${getName(r)}`}
+                        ref={isCurrentUser ? currentUserRowRef : null}
+                        className={`lbRow ${isCurrentUser ? "lbRow--currentUser" : ""}`}
+                      >
+                        <span className="badge">{getRank(i, r)}</span>
 
-                      <div className="lbRow__name lbNameWithBadge">
-                        <span>{getName(r)}</span>
+                        <div className="lbRow__name lbNameWithBadge">
+                          <span>{getName(r)}</span>
 
-                        {r.latestBadgeIconPath && badgeDetails && (
-                          <button
-                            type="button"
-                            className="lbBadgeButton"
-                            onClick={() => setSelectedBadge(badgeDetails)}
-                            title={r.latestBadgeName ?? undefined}
-                          >
-                            <img
-                              src={r.latestBadgeIconPath}
-                              alt={r.latestBadgeName ?? ""}
-                              className="lbBadgeIcon"
-                            />
-                          </button>
-                        )}
-                      </div>
+                          {r.latestBadgeIconPath && badgeDetails && (
+                            <button
+                              type="button"
+                              className="lbBadgeButton"
+                              onClick={() => setSelectedBadge(badgeDetails)}
+                              title={r.latestBadgeName ?? undefined}
+                            >
+                              <img
+                                src={r.latestBadgeIconPath}
+                                alt={r.latestBadgeName ?? ""}
+                                className="lbBadgeIcon"
+                              />
+                            </button>
+                          )}
+                        </div>
 
-                      <div className="lbRow__right">
-                        <div className="lbRow__points">{getScore(r)} p</div>
-                        <div className="lbRow__streak">
-                          streak: {r.currentStreakDays ?? 0}
+                        <div className="lbRow__right">
+                          <div className="lbRow__points">{getScore(r)} p</div>
+                          <div className="lbRow__streak">
+                            streak: {r.currentStreakDays ?? 0}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
