@@ -1,73 +1,77 @@
-# React + TypeScript + Vite
+# Lõputöö eesrakendus
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Autor: Iris Eliisabet Järvsoo
 
-Currently, two official plugins are available:
+Tegemist on mängustatud andmepüügi teadlikkuse tõstmise rakendusega, mis loodi lõputöö raames. Rakenduse eesmärk on aidata kasutajatel õppida ära tundma õngitsuskirju ja -sõnumeid läbi lühikeste igapäevaste viktoriinide, kohese tagasiside ja mängustamise elementide.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+See repositoorium sisaldab lahenduse eesrakendust Reacti üheleheküljelise rakenduse kujul ning infot, kuidas rakendust käivitada.
 
-## React Compiler
+## Kasutatud tehnoloogiad
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React
+- TypeScript
+- Vite
+- React Router
+- Axios
+- CSS
+- JWT
 
-## Expanding the ESLint configuration
+## Projekti struktuur
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+phish-frontend/
+├── public/             # Staatilised failid, nt märgid ja pildid
+├── src/
+│   ├── api/            # API päringud
+│   ├── auth/           # Autentimise ja kasutaja oleku abifunktsioonid
+│   ├── components/     # Taaskasutatavad kasutajaliidese komponendid
+│   ├── pages/          # Rakenduse põhivaated
+│   ├── types/          # TypeScript tüübid ja DTO-d
+│   ├── utils/          # Üldised abifunktsioonid
+│   ├── App.tsx         # Rakenduse marsruudid
+│   └── main.tsx        # Rakenduse sisenemispunkt
+├── .env.development    # Arenduskeskkonna muutujad
+├── package.json
+└── vite.config.ts
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Eesrakendus on üles ehitatud üheleheküljelise rakendusena (SPA), kus vaadete vahel liikumine toimub React Routeri abil ilma lehte täielikult uuesti laadimata. Tagarakendusega suhtlemine toimub REST API kaudu.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Keskkonnamuutujad
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Rakendus vajab tagarakenduse API aadressi.
+
+Loo projekti juurkausta fail `.env.development`:
+
+```env
+VITE_API_BASE_URL=http://localhost:5229/api
+VITE_MEDIA_BASE_URL=http://localhost:5229
+```
+
+Vajadusel muuda aadress vastavalt tagarakenduse käivitamise pordile.
+
+## Projekti käivitamine
+
+### Eeldused
+
+- Node.js
+- npm
+- töötav tagarakendus
+
+### 1. Paigalda sõltuvused
+
+```bash
+npm install
+```
+
+### 2. Käivita arenduskeskkond
+
+```bash
+npm run dev
+```
+
+Rakendus avaneb vaikimisi aadressil:
+
+```text
+http://localhost:5173
 ```
