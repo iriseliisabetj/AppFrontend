@@ -89,6 +89,7 @@ export default function QuizPage() {
           setBadgeQueue(unseen);
         }
       } catch {
+        //
       } finally {
         setBadgesChecked(true);
       }

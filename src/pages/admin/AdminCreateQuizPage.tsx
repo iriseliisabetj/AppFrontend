@@ -172,10 +172,10 @@ export default function AdminCreateQuizPage() {
   function canProceed(it: AdminQuizItemDraft) {
     if (!date) return false;
     if (!it.sender.trim()) return false;
-    if (it.channel === 1 && !it.subject.trim()) return false;
-    if (it.channel === 1 && !it.emailAddress.trim()) return false;
-    if (it.channel === 2 && !it.smsPreview.trim()) return false;
-    if (it.channel === 1 && !it.htmlBody.trim()) return false;
+    if (it.channel === 1 && !(it.subject ?? "").trim()) return false;
+    if (it.channel === 1 && !(it.emailAddress ?? "").trim()) return false;
+    if (it.channel === 2 && !(it.smsPreview ?? "").trim()) return false;
+    if (it.channel === 1 && !(it.htmlBody ?? "").trim()) return false;
     if (!it.explanationText.trim()) return false;
     return true;
   }
@@ -468,7 +468,7 @@ export default function AdminCreateQuizPage() {
                         <label className="field">
                           <span className="label">E-kirja HTML sisu</span>
                           <HtmlEditor
-                            value={current.htmlBody}
+                            value={current.htmlBody ?? ""}
                             onChange={(value) => setField("htmlBody", value)}
                           />
                         </label>
